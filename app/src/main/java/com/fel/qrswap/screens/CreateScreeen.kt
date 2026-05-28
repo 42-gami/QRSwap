@@ -5,11 +5,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.fel.qrswap.data.Card
 import com.fel.qrswap.data.CardViewModel
 import com.fel.qrswap.data.Element
+import com.fel.qrswap.ui.theme.toColor
 import com.fel.qrswap.weather.RetrofitInstance
+import com.fel.qrswap.weather.WeatherResponse
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.fel.qrswap.location.getCurrentLocation
 
 enum class CreateStep {
     ELEMENT,
@@ -17,23 +25,87 @@ enum class CreateStep {
     DETAILS
 }
 
+private const val USE_MOCK_WEATHER = false
 @Composable
 fun CreateScreen(
     viewModel: CardViewModel,
     navController: NavController
 ) {
+    var weather by remember { mutableStateOf<WeatherResponse?>(null) }
+    var weatherError by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    val context = LocalContext.current
+    var latitude by remember { mutableStateOf(52.23) }
+    var longitude by remember { mutableStateOf(21.01) }
 
-        val weather =
-            RetrofitInstance.api.getCurrentWeather(
-                latitude = 52.23,
-                longitude = 21.01
+    val locationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            if (granted) {
+
+                getCurrentLocation(context) { lat, lon ->
+
+                    latitude = lat
+                    longitude = lon
+
+                    android.util.Log.d(
+                        "LOCATION",
+                        "lat=$lat lon=$lon"
+                    )
+                }
+            }
+        }
+
+    fun mockWeather(): WeatherResponse {
+        return WeatherResponse(
+            current = com.fel.qrswap.weather.Current(
+                time = "MOCK",
+                interval = 900,
+                temperature_2m = 8.0,
+                is_day = 0,
+                rain = 1.0,
+                wind_speed_10m = 30.0
             )
-
-        println(weather.current.temperature_2m)
+        )
     }
 
+    LaunchedEffect(Unit) {
+        locationPermissionLauncher.launch(
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    }
+
+    LaunchedEffect(latitude, longitude){
+        try {
+            val result = if (USE_MOCK_WEATHER) {
+                mockWeather()
+            } else {
+                RetrofitInstance.api.getCurrentWeather(
+                    latitude = latitude,
+                    longitude = longitude
+                )
+            }
+
+            weather = result
+            weatherError = false
+
+            android.util.Log.d(
+                "WEATHER",
+                "temp=${result.current.temperature_2m}, " +
+                        "rain=${result.current.rain}, " +
+                        "wind=${result.current.wind_speed_10m}, " +
+                        "isDay=${result.current.is_day}"
+            )
+
+        } catch (e: Exception) {
+            weather = null
+            weatherError = true
+
+            android.util.Log.e("WEATHER", "FAILED REQUEST", e)
+        }
+    }
     var step by remember { mutableStateOf(CreateStep.ELEMENT) }
 
     var element by remember { mutableStateOf<Element?>(null) }
@@ -50,6 +122,37 @@ fun CreateScreen(
         name.isNotBlank() &&
                 description.isNotBlank() &&
                 element != null
+    }
+
+
+
+    fun allowedElements(): List<Element> {
+
+        val w = weather
+
+        if (w == null) {
+            return listOf(Element.EARTH)
+        }
+
+        val temp = w.current.temperature_2m
+        val rain = w.current.rain
+        val wind = w.current.wind_speed_10m
+        val isDay = w.current.is_day == 1
+
+        val list = mutableListOf<Element>()
+
+        list += Element.EARTH
+
+        if (temp > 10) list += Element.FIRE
+        else list += Element.ICE
+
+        if (!isDay) list += Element.DARK
+
+        if (rain > 0.2) list += Element.WATER
+
+        if (wind > 20) list += Element.AIR
+
+        return list
     }
 
     fun nextStep(step: CreateStep): CreateStep? {
@@ -91,14 +194,22 @@ fun CreateScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        Box(
+        Column(
             modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             when (step) {
 
                 CreateStep.ELEMENT -> {
+                    if (weatherError) {
+                        Text(
+                            text = "No internet connection.\nOnly EARTH element is available.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     ElementSelectScreen(
+                        allowedElements = allowedElements(),
                         onSelected = {
                             element = it
                             step = CreateStep.DRAW
@@ -167,6 +278,7 @@ fun CreateScreen(
 
 @Composable
 fun ElementSelectScreen(
+    allowedElements: List<Element>,
     onSelected: (Element) -> Unit
 ) {
     Box(
@@ -174,10 +286,25 @@ fun ElementSelectScreen(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Choose Element")
+
+            Text("Today's Elements:")
+
+            if (allowedElements.isEmpty()) {
+                Text("Loading weather...")
+                return@Column
+            }
 
             Element.values().forEach { element ->
-                Button(onClick = { onSelected(element) }) {
+                val enabled = element in allowedElements
+
+                Button(
+                    onClick = { onSelected(element) },
+                    enabled = enabled,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = element.toColor(),
+                        contentColor = Color.White
+                    )
+                ) {
                     Text(element.name)
                 }
             }

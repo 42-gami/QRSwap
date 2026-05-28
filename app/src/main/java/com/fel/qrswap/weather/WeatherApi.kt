@@ -16,7 +16,8 @@ interface WeatherApi {
 
         @Query("current")
         current: String =
-            "temperature_2m,rain,wind_speed_10m"
+            "temperature_2m,rain,wind_speed_10m,is_day"
+
 
     ): WeatherResponse
 }
