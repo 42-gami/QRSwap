@@ -17,7 +17,9 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.fel.qrswap.location.getCurrentLocation
+import com.fel.qrswap.utils.pixelsToByteArray
 
 enum class CreateStep {
     ELEMENT,
@@ -118,6 +120,13 @@ fun CreateScreen(
     var mana by remember { mutableStateOf(0) }
     var isSpell by remember { mutableStateOf(false) }
 
+    var pixels by remember {
+        mutableStateOf(
+            //ROZMIAR MUSI BYĆ TAKI SAM JAK GRID_SIZE
+            Array(32) { BooleanArray(32) }
+        )
+    }
+
     val isFormValid = remember(name, description, element) {
         name.isNotBlank() &&
                 description.isNotBlank() &&
@@ -183,7 +192,7 @@ fun CreateScreen(
                 hp = if (isSpell) null else hp,
                 dmg = if (isSpell) null else dmg,
                 cost = mana,
-                portrait = ByteArray(0)
+                portrait = pixelsToByteArray(pixels)
             )
         )
 
@@ -204,7 +213,7 @@ fun CreateScreen(
                 CreateStep.ELEMENT -> {
                     if (weatherError) {
                         Text(
-                            text = "No internet connection.\nOnly EARTH element is available.",
+                            text = "No internet connection.",
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -218,9 +227,13 @@ fun CreateScreen(
                 }
 
                 CreateStep.DRAW -> {
-                    DrawScreen(onNext = {
-                        step = CreateStep.DETAILS
-                    })
+                    DrawScreen(
+                        element = element ?: Element.EARTH,
+                        pixels = pixels,
+                        onPixelsChanged = {
+                            pixels = it
+                        }
+                    )
                 }
 
                 CreateStep.DETAILS -> {
@@ -312,27 +325,6 @@ fun ElementSelectScreen(
     }
 }
 
-@Composable
-fun DrawScreen(
-    onNext: () -> Unit
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Drawing screen placeholder (32x32 editor later)")
-        }
-
-        Button(
-            onClick = onNext,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Text("Next")
-        }
-    }
-}
 
 @Composable
 fun CardDetailsForm(
@@ -363,13 +355,22 @@ fun CardDetailsForm(
             TextField(
                 value = name,
                 onValueChange = { onNameChange(it.take(20)) },
-                label = { Text("Name") }
+                label = { Text("Name") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             )
 
             TextField(
                 value = description,
                 onValueChange = { onDescriptionChange(it.take(100)) },
-                label = { Text("Description") }
+                label = { Text("Description") },
+                minLines = 5,
+                maxLines = 5,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(120.dp)
             )
 
             if (!isSpell) {
@@ -379,7 +380,10 @@ fun CardDetailsForm(
                     onValueChange = {
                         onHpChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
                     },
-                    label = { Text("HP (0–255)") }
+                    label = { Text("HP (0–255)") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 )
 
                 TextField(
@@ -387,7 +391,10 @@ fun CardDetailsForm(
                     onValueChange = {
                         onDmgChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
                     },
-                    label = { Text("DMG (0–255)") }
+                    label = { Text("DMG (0–255)") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 )
             }
 
@@ -396,7 +403,10 @@ fun CardDetailsForm(
                 onValueChange = {
                     onManaChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
                 },
-                label = { Text("Mana (0–255)") }
+                label = { Text("Mana (0–255)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             )
 
             Row(

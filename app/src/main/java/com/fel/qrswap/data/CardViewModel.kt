@@ -12,7 +12,7 @@ class CardViewModel(private val repository: CardRepository) : ViewModel() {
 
 
     init {
-        deleteAll()
+        //deleteAll()
     }
 
     private fun insertTestCards() {
