@@ -112,7 +112,7 @@ fun DrawScreen(
                         if (pixels[y][x]) {
                             element.toColor()
                         } else {
-                            Color.White
+                            Color.Black
                         }
 
                     drawRect(

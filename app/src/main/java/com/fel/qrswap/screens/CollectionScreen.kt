@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,14 +29,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fel.qrswap.data.CardViewModel
+import com.fel.qrswap.qr.QrCodeImage
+import com.fel.qrswap.utils.CardPacket
 
 @Composable
 fun CollectionScreen(viewModel: CardViewModel) {
 
-    val cardsState = viewModel.allCards.collectAsState()
-    val cards = cardsState.value
+    val cards by viewModel.allCards.collectAsState()
 
     var selectedCard by remember { mutableStateOf<com.fel.qrswap.data.Card?>(null) }
+    var relinquishedCard by remember { mutableStateOf<com.fel.qrswap.data.Card?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -48,22 +51,27 @@ fun CollectionScreen(viewModel: CardViewModel) {
                     card,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            selectedCard = card
-                        }
+                        .clickable { selectedCard = card }
                 )
             }
         }
 
         if (selectedCard != null) {
-
             CardInspectOverlay(
                 card = selectedCard!!,
                 onClose = { selectedCard = null },
-                onRelinquish = {
-                    // placeholder for later deletion
+                onRelinquish = { card ->
+                    viewModel.delete(card)
                     selectedCard = null
+                    relinquishedCard = card
                 }
+            )
+        }
+
+        if (relinquishedCard != null) {
+            QrOverlay(
+                card = relinquishedCard!!,
+                onDismiss = { relinquishedCard = null }
             )
         }
     }
@@ -73,8 +81,23 @@ fun CollectionScreen(viewModel: CardViewModel) {
 fun CardInspectOverlay(
     card: com.fel.qrswap.data.Card,
     onClose: () -> Unit,
-    onRelinquish: () -> Unit
+    onRelinquish: (com.fel.qrswap.data.Card) -> Unit
 ) {
+    var showConfirm by remember { mutableStateOf(false) }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = { Text("Relinquish card?") },
+            text = { Text("This will permanently delete \"${card.name}\" from your collection.") },
+            confirmButton = {
+                Button(onClick = { onRelinquish(card) }) { Text("Confirm") }
+            },
+            dismissButton = {
+                Button(onClick = { showConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -83,16 +106,14 @@ fun CardInspectOverlay(
             .clickable { onClose() },
         contentAlignment = Alignment.Center
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Button(
-                onClick = { onRelinquish() },
+                onClick = { showConfirm = true },  // <-- was onRelinquish()
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Relinquish card")
@@ -102,8 +123,7 @@ fun CardInspectOverlay(
 
             CardItem(
                 card = card,
-                modifier = Modifier
-                    .fillMaxWidth(0.72f)
+                modifier = Modifier.fillMaxWidth(0.72f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -116,6 +136,32 @@ fun CardInspectOverlay(
             ) {
                 Text("QR + ownership history placeholder")
             }
+        }
+    }
+}
+
+@Composable
+fun QrOverlay(
+    card: com.fel.qrswap.data.Card,
+    onDismiss: () -> Unit
+) {
+    val bytes = remember(card.id) { CardPacket.serialize(card) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.95f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text("Scan to receive \"${card.name}\"", color = Color.White)
+            Spacer(modifier = Modifier.height(24.dp))
+            QrCodeImage(bytes = bytes, size = 280.dp)
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onDismiss) { Text("Done") }
         }
     }
 }

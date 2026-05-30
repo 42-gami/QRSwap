@@ -42,7 +42,7 @@ fun CardItem(
 ) {
     val displayName = if (card.isSpell) "Spell - ${card.name}" else "Creature - ${card.name}"
 
-    // outer decorative border ring
+
     Box(
         modifier = modifier
             .padding(4.dp)
@@ -69,7 +69,7 @@ fun CardItem(
                         .fillMaxSize()
                         .padding((8 * s).dp)
                 ) {
-                    // HEADER
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -81,7 +81,7 @@ fun CardItem(
 
                     Spacer(modifier = Modifier.height((8 * s).dp))
 
-                    // PORTRAIT — outlined square
+
                     Box(
                         modifier = Modifier
                             .size(portraitSize)
@@ -98,7 +98,7 @@ fun CardItem(
 
                     Spacer(modifier = Modifier.height((8 * s).dp))
 
-                    // DESCRIPTION — gray background always fills space down to stats
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

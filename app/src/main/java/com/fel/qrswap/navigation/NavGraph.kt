@@ -26,7 +26,7 @@ fun NavGraph(navController: NavHostController, viewModel: CardViewModel) {
     ) {
         composable(Screen.Collection.route) { CollectionScreen(viewModel) }
         composable(Screen.Create.route) { CreateScreen(viewModel, navController) }
-        composable(Screen.Receive.route) { ReceiveScreen() }
+        composable(Screen.Receive.route) { ReceiveScreen(viewModel) }
         composable(Screen.Profile.route) { ProfileScreen() }
     }
 }

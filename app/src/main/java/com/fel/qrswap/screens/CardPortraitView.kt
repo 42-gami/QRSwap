@@ -23,7 +23,7 @@ fun CardPortraitView(
 
     Canvas(modifier = modifier) {
 
-        drawRect(androidx.compose.ui.graphics.Color.White)
+        drawRect(androidx.compose.ui.graphics.Color.Black)
 
         val pixelSize = size.width / SIZE
 

@@ -62,6 +62,7 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.material3)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.navigation.compose)
@@ -83,5 +84,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     implementation("com.google.android.gms:play-services-location:21.2.0")
+
+    //for QR codes
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.3")
+
 
 }

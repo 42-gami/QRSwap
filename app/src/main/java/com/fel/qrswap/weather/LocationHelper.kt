@@ -18,7 +18,7 @@ fun getCurrentLocation(
             onResult(location.latitude, location.longitude)
         } else {
 
-            // Jeżeli nie zadziała - domyślnie polska
+            // Jeżeli nie zadziała - domyślnie Warszawa
             onResult(52.23, 21.01)
         }
     }
