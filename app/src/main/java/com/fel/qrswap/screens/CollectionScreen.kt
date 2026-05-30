@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fel.qrswap.data.CardViewModel
 import com.fel.qrswap.qr.QrCodeImage
 import com.fel.qrswap.utils.CardPacket
+import com.fel.qrswap.utils.OwnerHistory
 
 @Composable
 fun CollectionScreen(viewModel: CardViewModel) {
@@ -113,7 +114,7 @@ fun CardInspectOverlay(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = { showConfirm = true },  // <-- was onRelinquish()
+                onClick = { showConfirm = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Relinquish card")
@@ -134,7 +135,21 @@ fun CardInspectOverlay(
                     .height(120.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("QR + ownership history placeholder")
+                val owners = remember(card.ownerHistory) { OwnerHistory.read(card.ownerHistory) }
+
+                if (owners.isEmpty()) {
+                    Text("No previous owners.", color = Color.White)
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Previous owners:")
+                        owners.forEach { entry ->
+                            Text(
+                                text = "${entry.flag} ${entry.initials}",
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
             }
         }
     }

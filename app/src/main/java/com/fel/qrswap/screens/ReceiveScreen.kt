@@ -12,6 +12,9 @@ import com.journeyapps.barcodescanner.ScanOptions
 import com.fel.qrswap.data.Card
 import com.fel.qrswap.utils.CardPacket
 import com.fel.qrswap.data.CardViewModel
+import com.fel.qrswap.data.Countries
+import com.fel.qrswap.data.UserProfile
+import com.fel.qrswap.utils.OwnerHistory
 
 @Composable
 fun ReceiveScreen(viewModel: CardViewModel) {
@@ -41,7 +44,13 @@ fun ReceiveScreen(viewModel: CardViewModel) {
             return@rememberLauncherForActivityResult
         }
 
-        viewModel.insert(card)
+        val updatedHistory = OwnerHistory.append(
+            card.ownerHistory,
+            UserProfile.initials,
+            Countries.toIndex(UserProfile.country)
+        )
+
+        viewModel.insert(card.copy(ownerHistory = updatedHistory))
         message = "\"${card.name}\" added to your collection!"
     }
 

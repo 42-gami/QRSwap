@@ -14,6 +14,6 @@ data class Card(
     val dmg: Int? = null,
     val cost: Int,
     val element: Element,
-    val portrait: ByteArray
-    //val owner history - 20 bytes to store 5 last owners (3 character initials + country flag)
+    val portrait: ByteArray,
+    val ownerHistory: ByteArray = ByteArray(20)
 )

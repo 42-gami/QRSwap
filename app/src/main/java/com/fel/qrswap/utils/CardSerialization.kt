@@ -41,20 +41,15 @@ object CardPacket {
         out.writeByte(descBytes.size)
         out.write(descBytes)
 
-        // Portrait
         out.write(card.portrait)
 
-        // hp
         out.writeByte(card.hp ?: 0)
 
-        // dmg
         out.writeByte(card.dmg ?: 0)
 
-        // Cost
         out.writeByte(card.cost)
 
-        // Owner history (20 bytes, zeroed until implemented)
-        out.write(ByteArray(OWNER_HISTORY_BYTES))
+        out.write(card.ownerHistory)
 
         out.flush()
         return buf.toByteArray()
@@ -97,7 +92,8 @@ object CardPacket {
         // Cost
         val cost = packet[i++].toInt() and 0xFF
 
-        // Owner history (skip for now)
+        // Owner history
+        val ownerHistory = packet.copyOfRange(i, i + OWNER_HISTORY_BYTES)
         i += OWNER_HISTORY_BYTES
 
         return Card(
@@ -108,7 +104,8 @@ object CardPacket {
             dmg = dmg,
             cost = cost,
             element = element,
-            portrait = portrait
+            portrait = portrait,
+            ownerHistory = ownerHistory
         )
     }
 

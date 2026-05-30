@@ -18,7 +18,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.fel.qrswap.data.Countries
+import com.fel.qrswap.data.UserProfile
 import com.fel.qrswap.location.getCurrentLocation
+import com.fel.qrswap.utils.OwnerHistory
 import com.fel.qrswap.utils.pixelsToByteArray
 
 enum class CreateStep {
@@ -115,9 +118,9 @@ fun CreateScreen(
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
-    var hp by remember { mutableStateOf(0) }
-    var dmg by remember { mutableStateOf(0) }
-    var mana by remember { mutableStateOf(0) }
+    var hp by remember { mutableStateOf<Int?>(null) }
+    var dmg by remember { mutableStateOf<Int?>(null) }
+    var cost by remember { mutableStateOf<Int?>(null) }
     var isSpell by remember { mutableStateOf(false) }
 
     var pixels by remember {
@@ -127,10 +130,11 @@ fun CreateScreen(
         )
     }
 
-    val isFormValid = remember(name, description, element) {
+    val isFormValid = remember(name, element, hp, dmg, cost, isSpell) {
         name.isNotBlank() &&
-                description.isNotBlank() &&
-                element != null
+                element != null &&
+                cost != null && cost in 0..255 &&
+                (isSpell || (hp != null && hp in 0..255 && dmg != null && dmg in 0..255))
     }
 
 
@@ -183,16 +187,22 @@ fun CreateScreen(
     fun finishCardCreation() {
         val safeElement = element ?: return
 
+        val ownerHistory = OwnerHistory.createWithOwner(
+            UserProfile.initials,
+            Countries.toIndex(UserProfile.country)
+        )
+
         viewModel.insert(
             Card(
                 name = name,
                 description = description,
                 element = safeElement,
                 isSpell = isSpell,
-                hp = if (isSpell) null else hp,
-                dmg = if (isSpell) null else dmg,
-                cost = mana,
-                portrait = pixelsToByteArray(pixels)
+                hp = if (isSpell) null else (hp ?: 0).coerceIn(0, 255),
+                dmg = if (isSpell) null else (dmg ?: 0).coerceIn(0, 255),
+                cost = (cost ?: 0).coerceIn(0, 255),
+                portrait = pixelsToByteArray(pixels),
+                ownerHistory = ownerHistory
             )
         )
 
@@ -245,13 +255,13 @@ fun CreateScreen(
                         onDescriptionChange = { description = it.take(100) },
 
                         hp = hp,
-                        onHpChange = { hp = it.coerceIn(0, 255) },
+                        onHpChange = { hp = it },
 
                         dmg = dmg,
-                        onDmgChange = { dmg = it.coerceIn(0, 255) },
+                        onDmgChange = { dmg = it },
 
-                        mana = mana,
-                        onManaChange = { mana = it.coerceIn(0, 255) },
+                        cost = cost,
+                        onCostChange = { cost = it },
 
                         isSpell = isSpell,
                         onSpellChange = { isSpell = it }
@@ -334,14 +344,14 @@ fun CardDetailsForm(
     description: String,
     onDescriptionChange: (String) -> Unit,
 
-    hp: Int,
-    onHpChange: (Int) -> Unit,
+    hp: Int?,
+    onHpChange: (Int?) -> Unit,
 
-    dmg: Int,
-    onDmgChange: (Int) -> Unit,
+    dmg: Int?,
+    onDmgChange: (Int?) -> Unit,
 
-    mana: Int,
-    onManaChange: (Int) -> Unit,
+    cost: Int?,
+    onCostChange: (Int?) -> Unit,
 
     isSpell: Boolean,
     onSpellChange: (Boolean) -> Unit
@@ -374,39 +384,26 @@ fun CardDetailsForm(
             )
 
             if (!isSpell) {
-
                 TextField(
-                    value = hp.toString(),
-                    onValueChange = {
-                        onHpChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
-                    },
+                    value = hp?.toString() ?: "",
+                    onValueChange = { onHpChange(it.toIntOrNull()) },
                     label = { Text("HP (0–255)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )
 
                 TextField(
-                    value = dmg.toString(),
-                    onValueChange = {
-                        onDmgChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
-                    },
+                    value = dmg?.toString() ?: "",
+                    onValueChange = { onDmgChange(it.toIntOrNull()) },
                     label = { Text("DMG (0–255)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )
             }
 
             TextField(
-                value = mana.toString(),
-                onValueChange = {
-                    onManaChange(it.toIntOrNull()?.coerceIn(0, 255) ?: 0)
-                },
-                label = { Text("Mana (0–255)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                value = cost?.toString() ?: "",
+                onValueChange = { onCostChange(it.toIntOrNull()) },
+                label = { Text("Cost (0–255)") },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             )
 
             Row(
