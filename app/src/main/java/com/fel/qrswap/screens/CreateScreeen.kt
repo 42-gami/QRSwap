@@ -187,11 +187,6 @@ fun CreateScreen(
     fun finishCardCreation() {
         val safeElement = element ?: return
 
-        val ownerHistory = OwnerHistory.createWithOwner(
-            UserProfile.initials,
-            Countries.toIndex(UserProfile.country)
-        )
-
         viewModel.insert(
             Card(
                 name = name,
@@ -202,7 +197,7 @@ fun CreateScreen(
                 dmg = if (isSpell) null else (dmg ?: 0).coerceIn(0, 255),
                 cost = (cost ?: 0).coerceIn(0, 255),
                 portrait = pixelsToByteArray(pixels),
-                ownerHistory = ownerHistory
+                ownerHistory = ByteArray(20)
             )
         )
 

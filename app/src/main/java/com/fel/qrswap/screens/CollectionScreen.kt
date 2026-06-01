@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fel.qrswap.data.CardViewModel
+import com.fel.qrswap.data.Countries
+import com.fel.qrswap.data.UserProfile
 import com.fel.qrswap.qr.QrCodeImage
 import com.fel.qrswap.utils.CardPacket
 import com.fel.qrswap.utils.OwnerHistory
@@ -92,7 +94,14 @@ fun CardInspectOverlay(
             title = { Text("Relinquish card?") },
             text = { Text("This will permanently delete \"${card.name}\" from your collection.") },
             confirmButton = {
-                Button(onClick = { onRelinquish(card) }) { Text("Confirm") }
+                Button(onClick = { val updatedCard = card.copy(
+                    ownerHistory = OwnerHistory.append(
+                        card.ownerHistory,
+                        UserProfile.initials,
+                        Countries.toIndex(UserProfile.country)
+                    )
+                )
+                    onRelinquish(updatedCard)}) { Text("Confirm") }
             },
             dismissButton = {
                 Button(onClick = { showConfirm = false }) { Text("Cancel") }

@@ -44,13 +44,7 @@ fun ReceiveScreen(viewModel: CardViewModel) {
             return@rememberLauncherForActivityResult
         }
 
-        val updatedHistory = OwnerHistory.append(
-            card.ownerHistory,
-            UserProfile.initials,
-            Countries.toIndex(UserProfile.country)
-        )
-
-        viewModel.insert(card.copy(ownerHistory = updatedHistory))
+        viewModel.insert(card)
         message = "\"${card.name}\" added to your collection!"
     }
 
