@@ -40,7 +40,7 @@ fun CardItem(
     card: com.fel.qrswap.data.Card,
     modifier: Modifier = Modifier
 ) {
-    val displayName = if (card.isSpell) "Spell - ${card.name}" else "La Creatura - ${card.name}"
+    val displayName = if (card.isSpell) "Spell - ${card.name}" else "Creature - ${card.name}"
 
 
     Box(
